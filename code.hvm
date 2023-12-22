@@ -1,0 +1,11 @@
+zero = @f @x x
+one = @f @x (f x)
+succ = @p @f @x (p f (f x))
+pred = @s @f @x (s @g @h (h g f) @u x @v v)
+// Outputs: λa λb b
+main = (succ zero)
+// Outputs: λa λb b
+main = one
+// Outputs: λa λb b
+main = (pred (succ zero))
+// Outputs: λa λb b
