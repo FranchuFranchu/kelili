@@ -42,6 +42,8 @@ enum IO<T> {
   // Build a function that "marks" an arbitrary object, turning it into an opaque userdata object carrying the object and the hash of the current block.
   Mark { cont: Fn(Fn(U) -> Marked<U>) -> (IO T)}
   // Deconstruct a marked userdata object.
+  // When `marked` is not a marked userdata object, 
+  // hash is set to nil and U is set to `marked`
   Open { marked: Marked<U>, cont: Fn(U, Hash) -> (IO T) }
 
   // There are two `execution` environment calls
@@ -62,6 +64,8 @@ Kelili currently does not have a network protocol, or a way for peers to communi
 
 ## TODO list
 
+- Some smart contracts are not pure. Fix that.
+- Deep clone cached data
 - Complete the DHT implementation
  - Forget about dead nodes
  - Trust layer or something similar to prevent Sybil attacks.
@@ -83,13 +87,13 @@ pub enum Message {
 }
 
 enum AccountResult {
-  Ok { transaction: Message, state: Account }
+  Ok { transaction: Message, update: Account }
   Error { message: Any }
 }
 
 Account = Fn(msg: Message) -> AccountResult
 ```
-The returned `AccountResult.state` of the account is the new state of the account after the transaction has been carried out. `error` will be returned when verifying the transaction fails.
+The returned `AccountResult.update` of the account is the new state of the account after the transaction has been carried out. `error` will be returned when verifying the transaction fails.
 
 CatCoin marks and returns a transaction after verifying it. Each `Receive` message references a block with a `Send` transaction that must be marked by the original CatCoin smart contract. This is an equivalent to Nano's `link`.
 

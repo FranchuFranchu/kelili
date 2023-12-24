@@ -23,11 +23,9 @@ pk_metatable = {
 sk_metatable = {
   __index = {
     as_scalar = function(self) return self.value end,
-    sign = function(self, message) 
+    sign = function(self, message)
       local alpha = crypto.Scalar.random(rng)
-      print(alpha)
       local _ = alpha * crypto.Point.generator()
-      print(alpha)
       local challenge = lua_to_scalar({message, alpha * crypto.Point.generator()})
       local response = alpha - challenge * self:as_scalar()
       return {
@@ -36,27 +34,25 @@ sk_metatable = {
       }
     end,
     pk = function(self)
-      return set_pk_metatable({ value = self:as_scalar() * crypto.Point.generator() })
+      return set_pk_metatable({value = self:as_scalar() * crypto.Point.generator()})
     end
+  }}
+
+  function gen_sk()
+    return set_sk_metatable({value = crypto.Scalar.random(rng)})
+  end
+
+  function set_sk_metatable(t)
+    setmetatable(t, sk_metatable)
+    return t
+  end
+
+  function set_pk_metatable(t)
+    setmetatable(t, pk_metatable)
+    return t
+  end
+  return {
+    gen_sk = gen_sk,
+    set_pk_metatable = set_pk_metatable,
+    set_sk_metatable = set_sk_metatable,
   }
-}
-
-
-function gen_sk()
-  return set_sk_metatable({ value = crypto.Scalar.random(rng) })
-end
-
-function set_sk_metatable(t)
-  setmetatable(t, sk_metatable)
-  return t
-end
-
-function set_pk_metatable(t)
-  setmetatable(t, pk_metatable)
-  return t
-end
-return {
-  gen_sk = gen_sk,
-  set_pk_metatable = set_pk_metatable,
-  set_sk_metatable = set_sk_metatable,
-}

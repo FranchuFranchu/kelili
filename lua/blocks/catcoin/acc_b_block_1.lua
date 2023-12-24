@@ -1,9 +1,8 @@
-local cc_hash = param.cc_hash
+local parent_hash = param.parent_hash
 local send_hash = param.send_hash
 return kelili.io_run_fun(function()
-  local pk = 42
-  local state = IO.call(cc_hash)(pk)
-  local recv = state.state({
+  local parent = IO.call(parent_hash)
+  local recv = parent.update({
     type = "receive",
     from = send_hash,
   })

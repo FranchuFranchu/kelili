@@ -30,8 +30,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let lua = Lua::new();
 
     let std = std::fs::read("lua/lib.lua")?;
-    let std: Function = lua.load(std).into_function().unwrap();
-    lua.set_named_registry_value("kelili.stdlib", std).unwrap();
+    let std: Function = lua.load(std).into_function()?;
+    lua.set_named_registry_value("kelili.stdlib", std)?;
+    lua.set_named_registry_value("kelili.state_cache", lua.create_table()?)?;
     let f = mlua::prelude::LuaFunction::wrap(|l, m| make_lib(l, m)).into_lua(&lua)?;
     let _v = lua.load_from_function::<Value>("crypto", f.as_function().unwrap().clone());
 
@@ -39,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let node = Node::new(&mut rng);
     let node = NodeLock(Arc::new(Mutex::new(node)));
-    lua.globals().set("node", node).unwrap();
+    lua.globals().set("node", node)?;
 
     let script = cli
         .script

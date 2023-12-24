@@ -13,16 +13,22 @@ function block_from_file(name, param)
   local s = string.gsub(s, "\\", "\\\\")
   local s = string.gsub(s, "\"", "\\\"")
   local code = "local param = loadstring(\"" .. s .. "\")()\n" .. code
-  local code = string.dump(load(code))
+  local ok, err = load(code, name)
+  if not ok then
+    error(err)
+  end
+  local code = string.dump(ok)
   return node:new_block(code, name)
 end
+
 
 local sk = crypto_util.gen_sk()
 local signature = sk:sign("Hi")
 
-local catcoin_hash = block_from_file("catcoin.lua")
+local catcoin_hash = block_from_file("catcoin/catcoin.lua")
+local acc_a_block_0_hash = block_from_file("catcoin/acc_a_block_0.lua", {cc_hash = catcoin_hash, pk = sk:pk()})
+
 node:run_block(catcoin_hash)
-local acc_a_block_0_hash = block_from_file("acc_a_block_0.lua", {pk = sk:pk(), cc_hash = catcoin_hash})
 local result = node:run_block(acc_a_block_0_hash)
 if result.error then
   kelili.debug(result)
@@ -30,21 +36,31 @@ if result.error then
 end
 
 
-local acc_a_block_1_hash = block_from_file("acc_a_block_1.lua", 
-  {
-    parent_hash = acc_a_block_0_hash, 
-    dest = 42,
-    amount = 16,
-    signature = sk:sign({parent_hash = acc_a_block_0_hash, dest = 42, amount = 16})
-  })
+local acc_b_block_0_hash = block_from_file("catcoin/acc_b_block_0.lua", {cc_hash = catcoin_hash})
+
+local result = node:run_block(acc_a_block_0_hash)
+if result.error then
+  kelili.debug(result)
+  return
+end
+
+local signature = sk:sign({parent_hash = acc_a_block_0_hash, amount = 16, dest = acc_b_block_0_hash})
+local acc_a_block_1_hash = block_from_file("catcoin/acc_a_block_1.lua", {
+  parent_hash = acc_a_block_0_hash,
+  dest = acc_b_block_0_hash,
+  amount = 16,
+  signature = signature
+})
+
 local result = node:run_block(acc_a_block_1_hash)
 if result.error then
   kelili.debug(result)
   return
 end
 
-local acc_b_block_01_hash = block_from_file("acc_b_block_01.lua", {cc_hash = catcoin_hash, send_hash = acc_a_block_1_hash})
-local result = node:run_block(acc_b_block_01_hash)
+local acc_b_block_1_hash = block_from_file("catcoin/acc_b_block_1.lua", {parent_hash = acc_b_block_0_hash, send_hash = acc_a_block_1_hash})
+
+local result = node:run_block(acc_b_block_1_hash)
 if result.error then
   kelili.debug(result)
   return

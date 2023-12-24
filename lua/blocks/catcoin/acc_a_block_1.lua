@@ -3,12 +3,14 @@ local signature = param.signature
 local dest = param.dest
 local amount = param.amount
 return kelili.io_run_fun(function()
-  local state = IO.call_bubble(parent_hash)
-  local w = IO.bubble(state.state({
+  local parent = IO.call_bubble(parent_hash)
+  local w = IO.bubble(parent.update({
     type = "send",
-    dest = param.dest,
     amount = param.amount,
-    signature = param.signature
+    dest = param.dest,
+    parent_hash = parent_hash,
+    signature = signature,
   }))
   return w
 end)
+

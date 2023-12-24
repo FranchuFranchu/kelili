@@ -1,1 +1,1 @@
-pub type Id = [u8; 32];
+pub type Id = ethnum::U256;

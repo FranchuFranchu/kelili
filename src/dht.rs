@@ -106,30 +106,28 @@ trait N: rand::RngCore + rand::CryptoRng + core::fmt::Debug + Send {}
 impl<T> N for T where T: rand::RngCore + rand::CryptoRng + core::fmt::Debug + Send {}
 
 pub fn encode_id(id: &Id) -> String {
-    format!("0x{}", &hex::encode(id)[..4])
+    format!("0x{:#?}", id)
 }
 
 pub fn xor_distance(from: &Id, other: &Id) -> Id {
-    std::array::from_fn(|i| from[i] ^ other[i])
+    from ^ other
 }
 
 impl Peer {
     pub fn hash(&self, data: &[u8]) -> Id {
         let mut hasher = blake2::Blake2s256::new();
         hasher.update(data);
-        hasher.finalize().into()
+        ethnum::U256::from_le_bytes(hasher.finalize().into())
     }
     pub fn distance_to(&self, other: &Id) -> Id {
         xor_distance(&self.id, other)
     }
     pub fn bucket_num(&mut self, id: &Id) -> Option<usize> {
-        for (idx, i) in id.iter().map(|x| 8 - x.leading_zeros()).enumerate() {
-            if i > 0 {
-                return Some(idx * 8 + i as usize);
-            }
+        if id.leading_zeros() > 0 {
+            Some(256 - id.leading_zeros() as usize)
+        } else {
+            None
         }
-        // This is ourselves.
-        return None;
     }
     pub fn find_closest_peers(&mut self, hash: &Id, amount: &u32) -> Vec<PeerInfo> {
         self.buckets
@@ -366,7 +364,9 @@ impl Peer {
             buckets: std::array::from_fn(|_x| Vec::new()),
             rx,
             tx,
-            id: std::array::from_fn(|_x| (rng.next_u32() & 0xFF) as u8),
+            id: ethnum::U256::from_le_bytes(std::array::from_fn(|_x| {
+                (rng.next_u32() & 0xFF) as u8
+            })),
             msg_sent_at: HashMap::new(),
             peer_distance: HashMap::new(),
             waiting_finds: HashMap::new(),
